@@ -43,7 +43,7 @@ def create_table() -> int:
             conn.commit()
             c.execute("""
                 CREATE TABLE users (
-                user        TEXT        PRIMARY KEY NOT NULL UNIQUE, \
+                login       TEXT        PRIMARY KEY NOT NULL UNIQUE, \
                 hash        BLOB NOT    NULL, \
                 dir         TEXT NOT    NULL UNIQUE, \
                 enc_key     BLOB NOT    NULL
@@ -55,15 +55,15 @@ def create_table() -> int:
         return -1
 
 
-def insert(user: str, hash: bytes, dir: str, enc_key: bytes) -> int:
+def insert(login: str, hash: bytes, dir: str, enc_key: bytes) -> int:
     global conn
     global c
-    if not isinstance(user, str):
-        print("Error in insert: Incorrect user type")
+    if not isinstance(login, str):
+        print("Error in insert: Incorrect login type")
         return -1
     else:
-        if len(user) < 1:
-            print("Error in insert: Incorrect name length")
+        if len(login) < 1:
+            print("Error in insert: Incorrect login length")
             return -1
     if not isinstance(dir, str):
         print("Error in insert: Incorrect dir type")
@@ -71,62 +71,62 @@ def insert(user: str, hash: bytes, dir: str, enc_key: bytes) -> int:
     try:
         with conn:
             c.execute("""
-                INSERT INTO users (user, hash, dir, enc_key) \
+                INSERT INTO users (login, hash, dir, enc_key) \
                 VALUES (?, ?, ?, ?)""",
-                      (user, hash, dir, enc_key))
+                      (login, hash, dir, enc_key))
         return 0
     except sqlite3.IntegrityError as e:
         print("Error in insert: " + str(e))
         return -1
 
 
-def cut(user: str) -> int:
+def cut(login: str) -> int:
     global conn
     global c
-    if not isinstance(user, str):
-        print("Error in insert: Incorrect user type")
+    if not isinstance(login, str):
+        print("Error in insert: Incorrect login type")
         return -1
     else:
-        if len(user) < 1:
-            print("Error in insert: Incorrect name length")
+        if len(login) < 1:
+            print("Error in insert: Incorrect login length")
             return -1
 
     with conn:
-        c.execute("""SELECT * FROM users WHERE user=?""", (user, ))
+        c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
         info: Tuple[str, bytes, str, bytes] = c.fetchone()
         if info is None:
             return -1
 
     try:
         with conn:
-            c.execute("""DELETE FROM users WHERE user=?""", (user, ))
+            c.execute("""DELETE FROM users WHERE login=?""", (login, ))
         return 0
     except sqlite3.IntegrityError as e:
         print("Error in cut: " + str(e))
         return -1
 
 
-def update(user: str, hash: bytes = b'None',
+def update(login: str, hash: bytes = b'None',
            dir: str = 'None', enc_key: bytes = b'None') -> int:
     global conn
     global c
-    if not isinstance(user, str):
-        print("Error in insert: Incorrect user type")
+    if not isinstance(login, str):
+        print("Error in insert: Incorrect login type")
         return -1
     else:
-        if len(user) < 1:
-            print("Error in insert: Incorrect name length")
+        if len(login) < 1:
+            print("Error in insert: Incorrect login length")
             return -1
 
-    temp_values = [user, hash, dir, enc_key]
+    temp_values = [login, hash, dir, enc_key]
     temp_types = [str, bytes, str, bytes]
     for i in range(len(temp_values)):
         if not isinstance(temp_values[i], temp_types[i]):
-            print("Error in update: Incorrect user type")
+            print("Error in update: Incorrect login type")
             return -1
         else:
             if len(temp_values[i]) < 1:
-                print("Error in update: Incorrect name length")
+                print("Error in update: Incorrect login length")
                 return -1
 
     try:
@@ -143,19 +143,19 @@ def update(user: str, hash: bytes = b'None',
                     upd += ", "
                 upd += "enc_key = '" + str(enc_key) + "'"
             c.execute("""
-                UPDATE users SET {0} WHERE user = '{1}'""".format(upd, user))
+                UPDATE users SET {0} WHERE login = '{1}'""".format(upd, login))
         return 0
     except sqlite3.IntegrityError as e:
         print("Error in update: " + str(e))
         return -1
 
 
-def info(user: str) -> Union[Tuple[str, bytes, str, bytes], int]:
+def info(login: str) -> Union[Tuple[str, bytes, str, bytes], int]:
     global conn
     global c
     try:
         with conn:
-            c.execute("""SELECT * FROM users WHERE user=?""", (user, ))
+            c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
             info: Tuple[str, bytes, str, bytes] = c.fetchone()
             if info is None:
                 return -1
@@ -170,6 +170,6 @@ if __name__ == "__main__":
     # print("create_table:", create_table())
     # print("insert:", insert('test', b'hsh', 'folder', b'enc'))
     # print("update:", update('admin', dir='folderforadmin'))
-    # print("info:", info('lols'))
+    # print("info:", info('test'))
     # print("cut:", cut('lols'))
     print("close_db:", close_db())
