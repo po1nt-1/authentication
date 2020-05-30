@@ -4,7 +4,7 @@ from typing import Dict, Union
 import hashlib
 
 
-_SALT = b'8_TuDUK9IpJKaM7NWkpSQcMlVh0ZoEmYdeIOjvItOSk='
+_SALT: bytes = b'8_TuDUK9IpJKaM7NWkpSQcMlVh0ZoEmYdeIOjvItOSk='
 
 
 def hash(data: bytes) -> Union[bytes, int]:
@@ -18,7 +18,7 @@ def gen_master_key(passwrd: bytes) -> Union[bytes, int]:
     if isinstance(passwrd, bytes) is False:
         print("Error in security.gen_master_key(): Incompatible value type")
         return -1
-    enc_passwrd = hashlib.pbkdf2_hmac('sha256', passwrd, _SALT, 100000)
+    enc_passwrd: bytes = hashlib.pbkdf2_hmac("sha256", passwrd, _SALT, 100000)
     return enc_passwrd
 
 
@@ -31,8 +31,8 @@ def pad(data: bytes, block_size: int) -> Union[bytes, int]:
             or isinstance(block_size, int) is False:
         print("Error in security.pad(): Incompatible value type")
         return -1
-    padding_len = block_size - len(data) % block_size
-    padding = bytes([padding_len]) * padding_len
+    padding_len: int = block_size - len(data) % block_size
+    padding: bytes = bytes(bytes([padding_len]) * padding_len)
     return data + padding
 
 
@@ -41,11 +41,12 @@ def unpad(padded_data: bytes, block_size: int) -> Union[bytes, int]:
             or isinstance(block_size, int) is False:
         print("Error in security.unpad(): Incompatible value type")
         return -1
-    pdata_len = len(padded_data)
+    pdata_len: int = len(padded_data)
     if pdata_len % block_size:
         print("Error in security.unpad(): Input data is not padded")
         return -1
-    padding_len = padded_data[-1]
+    # padding_len: int = int.from_bytes(bytes(padded_data[-1]), byteorder='little')
+    padding_len: int = padded_data[-1]
     if padding_len < 1 or padding_len > min(block_size, pdata_len):
         print("Error in security.unpad(): Padding is incorrect.")
         return -1
@@ -55,36 +56,39 @@ def unpad(padded_data: bytes, block_size: int) -> Union[bytes, int]:
     return padded_data[:-padding_len]
 
 
-def encrypt(text: bytes, key: bytes) -> Union[Dict[bytes, bytes], int]:
+def encrypt(text: bytes, key: bytes) -> Union[Dict[str, bytes], int]:
     if isinstance(text, bytes) is False \
             or isinstance(key, bytes) is False:
         print("Error in security.encrypt(): Incompatible value type")
         return -1
+    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC)
 
-    cipher = AES.new(key, AES.MODE_CBC)
-    ct = bytes(cipher.encrypt(pad(text, AES.block_size)))
-    iv = bytes(cipher.iv)
-    result = {'ciphertext': ct, "iv": iv}
+    checker1: Union[bytes, int] = pad(text, AES.block_size)
+    if checker1 == -1:
+        return -1
+    ct: bytes = cipher.encrypt(checker1)
+    iv: bytes = cipher.iv
     if isinstance(ct, bytes) and isinstance(iv, bytes):
-        return result
+        return {'ciphertext': ct, "iv": iv}
     else:
         print("Error in security.encrypt(): Incompatible return value type")
         return -1
 
 
 def decrypt(encrypted_data: Dict[str, bytes], key: bytes) -> Union[bytes, int]:
-    ct = encrypted_data["ciphertext"]
-    iv = encrypted_data["iv"]
-    if isinstance(ct, bytes) is False \
-            or isinstance(key, bytes) is False:
+    ct: bytes = encrypted_data["ciphertext"]
+    iv: bytes = encrypted_data["iv"]
+    if not isinstance(ct, bytes) or not isinstance(iv, bytes) \
+            or not isinstance(key, bytes):
         print("Error in security.decrypt(): Incompatible value type")
         return -1
 
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    text = unpad(cipher.decrypt(ct), AES.block_size)
-    return text
+    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv)
+    checker1: Union[bytes, int] = unpad(cipher.decrypt(ct), AES.block_size)
+    if checker1 == -1:
+        return -1
+    return bytes(checker1)
 
 
 if __name__ == "__main__":
-    p = 'PJKJnja'.encode(encoding="utf-8")
-    print(hash(p))
+    pass
