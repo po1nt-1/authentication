@@ -240,87 +240,6 @@ def change_pass(login: str, old_master_key: bytes) -> int:
     return 0
 
 
-def encrypt_text(login: str, master_key: bytes,
-                 text: str) -> Union[bytes, int]:
-    if not isinstance(login, str) or not isinstance(master_key, bytes) \
-            or not isinstance(text, str):
-        print("Error: Incorrect value type")
-        return -1
-
-    text_bytes = text.encode(encoding="utf-8")
-    if not isinstance(text_bytes, bytes):
-        print("Error: Incorrect text encoding")
-        return -1
-
-    checker1 = db.info(login)
-    if checker1 == -1:
-        print("Error: Incorrect value type")
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker1)
-
-    if not isinstance(info[3], bytes) or not isinstance(info[4], bytes):
-        print("Error: Incorrect value type")
-        return -1
-    encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
-
-    checker2 = security.decrypt(
-        encrypted_data, master_key)
-    if checker2 == -1:
-        return -1
-    key: bytes = bytes(checker2)
-
-    checker3 = security.encrypt(text_bytes, key, info[4])
-    if checker3 == -1:
-        return -1
-    ct: bytes = bytes(checker3["ciphertext"])
-    if not isinstance(ct, bytes):
-        print("Error: Incompatible return value type")
-        return -1
-
-    return ct
-
-
-def decrypt_text(login: str, master_key: bytes, ct: bytes) -> Union[str, int]:
-    if not isinstance(login, str) or not isinstance(master_key, bytes) \
-            or not isinstance(ct, bytes):
-        print("Error: Incorrect value type")
-        return -1
-
-    checker1 = db.info(login)
-    if checker1 == -1:
-        print("Error: Incorrect value type")
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker1)
-
-    if not isinstance(info[3], bytes) or not isinstance(info[4], bytes):
-        print("Error: Incorrect value type")
-        return -1
-    encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
-
-    checker2 = security.decrypt(encrypted_data, master_key)
-    if checker2 == -1:
-        return -1
-    key: bytes = bytes(checker2)
-
-    encrypted_text = {"ciphertext": ct, "iv": info[4]}
-
-    checker3 = security.decrypt(encrypted_text, key)
-    if checker3 == -1:
-        return -1
-    text: bytes = bytes(checker3)
-    if not isinstance(text, bytes):
-        print("Error: Incompatible return value type")
-        return -1
-
-    result = text.decode(encoding="utf-8")
-
-    if not isinstance(result, str):
-        print("Error: Incompatible return value type")
-        return -1
-
-    return result
-
-
 def user_interface() -> None:
     pass
 
@@ -340,11 +259,11 @@ if __name__ == "__main__":
         # print(create_account())
 
         #       авторизация и сохранение выхлопа
-        # cache: Union[Tuple[str, bytes], int] = auth()
-        # if cache == -1:
-        #     break
-        # login: str = str(cache[0])
-        # master_key: bytes = bytes(cache[1])
+        cache: Union[Tuple[str, bytes], int] = auth()
+        if cache == -1:
+            break
+        login: str = str(cache[0])
+        master_key: bytes = bytes(cache[1])
 
         #       шифрование и запись заметки
         # note_name = input("Enter a note name: ")
@@ -355,12 +274,8 @@ if __name__ == "__main__":
         # if len(error_list) != 0:
         #     print(f"Error: '{''.join(error_list)}' is not allowed")
         #     break
-        # tekst = input("Enter your message:\n")
-        # checker = encrypt_text(login, master_key, tekst)
-        # if checker == -1:
-        #     break
-        # tekst_bytes: bytes = bytes(checker)
-        # checker1 = notes.write(login, note_name, tekst_bytes, mode="overwrite")
+
+        # checker1 = notes.write(login, master_key, note_name)
         # if checker1 == -1:
         #     break
 
@@ -373,15 +288,9 @@ if __name__ == "__main__":
         # if len(error_list) != 0:
         #     print(f"Error: '{''.join(error_list)}' is not allowed")
         #     break
-        # checker0 = notes.read(login, note_name)
+        # checker0 = notes.read(login, master_key, note_name)
         # if checker0 == -1:
         #     break
-        # enc_tekst: bytes = bytes(checker0)
-        # checker2 = decrypt_text(login, master_key, enc_tekst)
-        # if checker2 == -1:
-        #     break
-        # tekst: str = str(checker2)
-        # print(tekst)
 
         #       смена пароля(только при авторизации)
         # change_pass(login, master_key)
