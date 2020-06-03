@@ -3,7 +3,12 @@ import notes
 import security
 import os
 import shutil
-from typing import Union, Dict, Tuple, List
+from typing import Dict, Tuple, List
+
+
+class Error(Exception):
+    pass
+
 
 _ALLOWED_CHARACTERS: str = "ZFyt2NebDRMlJUGm[№Q1AVHspK-PXI8douwB" + \
     "T~4O5_zSWi7rLxa]90k(3vgq!6f})Ej{nCcYh"
@@ -13,46 +18,53 @@ def create_account() -> int:
     print("REGISTRATION")
     login: str = input("Enter your login: ")
     if len(login) < 1 or not isinstance(login, str):
-        print("Incorrect login")
-        return -1
+        raise Error("Error in main.create_account(): Incorrect login")
     if len(login) > 100:
-        print(f"Error: Login too long (len: {len(login)}).\nMax length 100")
-        return -1
+        raise Error(
+            f"Error in main.create_account(): Login too long " +
+            "(len: {len(login)}).\nMax length 100")
     error_list: List[str] = list()
     for elem in login:
         if elem not in _ALLOWED_CHARACTERS:
             error_list.append(elem)
     if len(error_list) != 0:
-        print(f"Error: '{''.join(error_list)}' is not allowed")
-        return -1
+        raise Error(
+            f"Error in main.create_account(): '{''.join(error_list)}' " +
+            "is not allowed")
 
-    checker1 = db.info(login)
-    if checker1 != -1:
-        print("Error: A user with this username is already registered")
-        return -1
+    try:
+        checker1 = db.info(login)
+        if checker1 is not None:
+            raise Error(
+                "Error in main.create_account(): A user with this login " +
+                "is already registered")
+    except Error as e:
+        raise Error(str(e))
 
     password: str = input("Enter your password: ")
     if len(password) < 1 or not isinstance(login, str):
-        print("Error: Incorrect password")
-        return -1
+        raise Error("Error in main.create_account(): Incorrect password")
     for elem in password:
         if elem not in _ALLOWED_CHARACTERS:
             error_list.append(elem)
     if len(error_list) != 0:
-        print(f"Error: '{''.join(error_list)}' is not allowed")
-        return -1
+        raise Error(
+            f"Error in main.create_account(): '{''.join(error_list)}' " +
+            "is not allowed")
 
     password_bytes: bytes = password.encode(encoding="utf-8")
 
-    checker2 = security.gen_master_key(password_bytes)
-    if checker2 == -1:
-        return -1
-    master_key: bytes = bytes(checker2)
+    try:
+        checker2 = security.gen_master_key(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    master_key: bytes = checker2
 
-    checker3 = security.hash(password_bytes)
-    if checker3 == -1:
-        return -1
-    password_bytes_hash: bytes = bytes(checker3)
+    try:
+        checker3 = security.hash(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    password_bytes_hash: bytes = checker3
 
     dirr: str = os.path.join("authentication", "notes", login)
 
@@ -61,183 +73,200 @@ def create_account() -> int:
     os.mkdir(dirr)
 
     key: bytes = security.gen_key()
-    checker4 = security.encrypt_new(key, master_key)
-    if checker4 == -1:
-        return -1
+    try:
+        checker4 = security.encrypt_new(key, master_key)
+    except Error as e:
+        raise Error(str(e))
     enc_key_with_iv: Dict[str, bytes] = dict(checker4)
     enc_key: bytes = enc_key_with_iv["ciphertext"]
     iv: bytes = enc_key_with_iv["iv"]
-    if not isinstance(enc_key, bytes) or not isinstance(iv, bytes):
-        print("Error: Incorrect value type")
-        return -1
 
     db.insert(login, password_bytes_hash, dirr, enc_key, iv)
     print("Account creation completed successfully")
-    return 0
 
 
-def auth() -> Union[Tuple[str, bytes], int]:
+def auth() -> Tuple[str, bytes]:
     print("AUTHENTICATION")
     login: str = input("Enter your login: ")
     if len(login) < 1 or not isinstance(login, str):
-        print("Error: Incorrect login")
-        return -1
+        raise Error("Error in main.auth(): Incorrect login")
     error_list: List[str] = list()
     for elem in login:
         if elem not in _ALLOWED_CHARACTERS:
             error_list.append(elem)
     if len(error_list) != 0:
-        print(f"Error: '{''.join(error_list)}' is not allowed")
-        return -1
+        raise Error(
+            f"Error in main.auth(): '{''.join(error_list)}' is not allowed")
 
-    checker1 = db.info(login)
-    if checker1 == -1:
-        print("Error: A user with this login is not registered")
-        return -1
+    try:
+        checker1 = db.info(login)
+        if checker1 is None:
+            raise Error(
+                "Error in main.auth(): A user with this login " +
+                " is not registered")
+    except Error as e:
+        raise Error(str(e))
 
     password: str = input("Enter your password: ")
     if len(password) < 1 or not isinstance(login, str):
-        print("Error: Incorrect password")
-        return -1
+        raise Error("Error in main.auth(): Incorrect password")
     for elem in password:
         if elem not in _ALLOWED_CHARACTERS:
             error_list.append(elem)
     if len(error_list) != 0:
-        print(f"Error: '{''.join(error_list)}' is not allowed")
-        return -1
+        raise Error(
+            f"Error in main.auth(): '{''.join(error_list)}' is not allowed")
+
+    dirr: str = os.path.join("authentication", "notes", login)
+    if not os.path.exists(dirr):
+        os.mkdir(dirr)
 
     password_bytes: bytes = password.encode(encoding="utf-8")
 
-    checker2 = security.gen_master_key(password_bytes)
-    if checker2 == -1:
-        return -1
-    master_key: bytes = bytes(checker2)
+    try:
+        checker2 = security.gen_master_key(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    master_key: bytes = checker2
 
-    checker3 = security.hash(password_bytes)
-    if checker3 == -1:
-        return -1
-    password_bytes_hash: bytes = bytes(checker3)
+    try:
+        checker3 = security.hash(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    password_bytes_hash: bytes = checker3
 
-    checker4 = db.info(login)
-    if checker4 == -1:
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker4)
-    password_bytes_hash_orig: bytes = info[1]
+    info: Tuple[object, ...] = tuple(checker1)
+    password_bytes_hash_orig = info[1]
 
     if password_bytes_hash != password_bytes_hash_orig:
-        print("Error: Wrong password")
-        return -1
+        raise Error("Error in main.auth(): Wrong password")
     print("Authorization completed successfully")
+
+    if not isinstance(login, str) or not isinstance(master_key, bytes):
+        raise Error("Error in main.auth(): Invalid output type")
     return (login, master_key)
 
 
-def delete_account(login: str) -> int:
-    checker1 = db.info(login)
-    if checker1 == -1:
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker1)
+def delete_account(login: str) -> None:
+    try:
+        checker1 = db.info(login)
+        if checker1 is None:
+            raise Error(
+                "Error in main.delete_account(): A user with this login " +
+                "is not registered")
+    except Error as e:
+        raise Error(str(e))
+    info: Tuple[object, ...] = tuple(checker1)
 
-    if not isinstance(info[2], str):
-        print("Error: Incorrect value type")
-        return -1
-    dirr: str = info[2]
+    dirr = info[2]
 
     if os.path.exists(dirr):
         shutil.rmtree(dirr)
 
-    checker2 = db.cut(login)
-    if checker2 == -1:
-        return -1
+    try:
+        checker2 = db.cut(login)
+    except Error as e:
+        raise Error(str(e))
 
     print("Account deletion completed successfully")
-    return 0
+    return None
 
 
-def change_key(login: str, master_key: bytes) -> int:
-    checker1 = db.info(login)
-    if checker1 == -1:
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker1)
+def change_key(login: str, master_key: bytes) -> None:
+    try:
+        checker1 = db.info(login)
+        if checker1 is None:
+            raise Error(
+                "Error in main.change_key(): A user with this login " +
+                "is not registered")
+    except Error as e:
+        raise Error(str(e))
+    info: Tuple[object, ...] = tuple(checker1)
 
-    if not isinstance(info[3], bytes) or not isinstance(info[4], bytes):
-        print("Error: Incorrect value type")
-        return -1
     encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
 
-    checker2 = security.decrypt(
-        encrypted_data, master_key)
-    if checker2 == -1:
-        return -1
-    old_key: bytes = bytes(checker2)
+    try:
+        checker2: bytes = security.decrypt(encrypted_data, master_key)
+    except Error as e:
+        raise Error(str(e))
+    old_key: object = checker2
 
     key: bytes = security.gen_key()
 
-    checker4 = security.encrypt_new(key, master_key)
-    if checker4 == -1:
-        return -1
-    enc_key: bytes = bytes(checker4["ciphertext"])
-    iv: bytes = bytes(checker4["iv"])
+    try:
+        checker4 = security.encrypt_new(key, master_key)
+    except Error as e:
+        raise Error(str(e))
+    enc_key: bytes = checker4["ciphertext"]
+    iv: bytes = checker4["iv"]
 
-    checker6 = db.update(login=login, enc_key=enc_key, iv=iv)
-    if checker6 == -1:
-        return -1
+    try:
+        checker6 = db.update(login=login, enc_key=enc_key, iv=iv)
+    except Error as e:
+        raise Error(str(e))
 
     print("The key change was successful")
-    return 0
+    return None
 
 
-def change_pass(login: str, old_master_key: bytes) -> int:
-    checker1 = db.info(login)
-    if checker1 == -1:
-        return -1
-    info: Tuple[str, bytes, str, bytes, bytes] = tuple(checker1)
+def change_pass(login: str, old_master_key: bytes) -> None:
+    try:
+        checker1 = db.info(login)
+        if checker1 is None:
+            raise Error(
+                "Error in main.change_pass(): A user with this login " +
+                "is not registered")
+    except Error as e:
+        raise Error(str(e))
+    info: Tuple[object, ...] = tuple(checker1)
 
     password: str = input("Enter your new password: ")
     if len(password) < 1 or not isinstance(login, str):
-        print("Error: Incorrect password")
-        return -1
+        raise Error("Error in main.change_pass(): Incorrect password")
     error_list: List[str] = list()
     for elem in password:
         if elem not in _ALLOWED_CHARACTERS:
             error_list.append(elem)
     if len(error_list) != 0:
-        print(f"Error: '{''.join(error_list)}' is not allowed")
-        return -1
+        raise Error(
+            f"Error in main.change_pass(): '{''.join(error_list)}' " +
+            "is not allowed")
     password_bytes: bytes = password.encode(encoding="utf-8")
 
-    if not isinstance(info[3], bytes) or not isinstance(info[4], bytes):
-        print("Error: Incorrect value type")
-        return -1
     encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
 
-    checker2 = security.decrypt(
-        encrypted_data, old_master_key)
-    if checker2 == -1:
-        return -1
-    key: bytes = bytes(checker2)
+    try:
+        checker2: bytes = security.decrypt(encrypted_data, old_master_key)
+    except Error as e:
+        raise Error(str(e))
+    key: bytes = checker2
 
-    checker3 = security.gen_master_key(password_bytes)
-    if checker3 == -1:
-        return -1
-    master_key_new: bytes = bytes(checker3)
+    try:
+        checker3 = security.gen_master_key(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    master_key_new: bytes = checker3
 
-    checker4 = security.encrypt(key, master_key_new, info[4])
-    if checker4 == -1:
-        return -1
-    enc_key: bytes = bytes(checker4["ciphertext"])
+    try:
+        checker4 = security.encrypt(key, master_key_new, info[4])
+    except Error as e:
+        raise Error(str(e))
+    enc_key = checker4["ciphertext"]
 
-    checker5 = security.hash(password_bytes)
-    if checker5 == -1:
-        return -1
-    password_bytes_hash: bytes = bytes(checker5)
+    try:
+        checker5 = security.hash(password_bytes)
+    except Error as e:
+        raise Error(str(e))
+    password_bytes_hash: bytes = checker5
 
-    checker6 = db.update(login=login, hash=password_bytes_hash,
-                         enc_key=enc_key)
-    if checker6 == -1:
-        return -1
+    try:
+        checker6 = db.update(
+            login=login, hash=password_bytes_hash, enc_key=enc_key)
+    except Error as e:
+        raise Error(str(e))
 
     print("Password change was successful")
-    return 0
+    return None
 
 
 def user_interface() -> None:
@@ -251,21 +280,35 @@ if __name__ == "__main__":
         if not os.path.exists(path):
             os.mkdir(path)
 
-        print(db.open_db())
+        try:
+            print(db.open_db())
+        except Error as e:
+            print(str(e))
+            break  # continue
 
-        print(db.create_table())
+        try:
+            print(db.create_table())
+        except Error as e:
+            print(str(e))
+            break  # continue
 
         #       создать акк
-        # print(create_account())
+        # try:
+        #     print(create_account())
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
         #       авторизация и сохранение выхлопа
-        cache: Union[Tuple[str, bytes], int] = auth()
-        if cache == -1:
-            break
-        login: str = str(cache[0])
-        master_key: bytes = bytes(cache[1])
+        try:
+            cache: Tuple[str, bytes] = auth()
+        except Error as e:
+            print(str(e))
+            break  # continue
+        login: str = cache[0]
+        master_key: bytes = cache[1]
 
-        #       шифрование и запись заметки
+        # #       шифрование и запись заметки
         # note_name = input("Enter a note name: ")
         # error_list: List[str] = list()
         # for elem in note_name:
@@ -273,13 +316,15 @@ if __name__ == "__main__":
         #         error_list.append(elem)
         # if len(error_list) != 0:
         #     print(f"Error: '{''.join(error_list)}' is not allowed")
-        #     break
+        #     break  # continue
 
-        # checker1 = notes.write(login, master_key, note_name)
-        # if checker1 == -1:
-        #     break
+        # try:
+        #     checker1 = notes.write(login, master_key, note_name)
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
-        #       расшифрование и чтение заметки
+        # #       расшифрование и чтение заметки
         # note_name = input("Enter a note name: ")
         # error_list: List[str] = list()
         # for elem in note_name:
@@ -287,20 +332,38 @@ if __name__ == "__main__":
         #         error_list.append(elem)
         # if len(error_list) != 0:
         #     print(f"Error: '{''.join(error_list)}' is not allowed")
-        #     break
-        # checker0 = notes.read(login, master_key, note_name)
-        # if checker0 == -1:
-        #     break
+        #     break  # continue
+        # try:
+        #     checker0 = notes.read(login, master_key, note_name)
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
-        #       смена пароля(только при авторизации)
-        # change_pass(login, master_key)
+        # #       смена пароля(только при авторизации)
+        # try:
+        #     change_pass(login, master_key)
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
-        #       смена ключа(только при авторизации)
-        # print(change_key(login, master_key))
+        # #       смена ключа(только при авторизации)
+        # try:
+        #     print(change_key(login, master_key))
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
-        #       удаление пользователя и его папки
-        # print(delete_account(login))
+        # #       удаление пользователя и его папки
+        # try:
+        #     print(delete_account(login))
+        # except Error as e:
+        #     print(str(e))
+        #     break  # continue
 
-        print(db.close_db())
+        try:
+            print(db.close_db())
+        except Error as e:
+            print(str(e))
+            break  # continue
 
         break
