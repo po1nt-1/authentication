@@ -5,7 +5,7 @@ from typing import Dict
 import hashlib
 
 
-class Error(Exception):
+class security_Error(Exception):
     pass
 
 
@@ -14,13 +14,13 @@ _SALT: bytes = b'8_TuDUK9IpJKaM7NWkpSQcMlVh0ZoEmYdeIOjvItOSk='
 
 def hash(data: bytes) -> bytes:
     if not isinstance(data, bytes):
-        raise Error("Error in security.hash(): Invalid input type")
+        raise security_Error("Error in security.hash(): Invalid input type")
     return hashlib.sha256(_SALT + data).digest()
 
 
 def gen_master_key(passwrd: bytes) -> bytes:
     if not isinstance(passwrd, bytes):
-        raise Error("Error in security.gen_master_key(): Invalid input type")
+        raise security_Error("Error in security.gen_master_key(): Invalid input type")
     enc_passwrd: bytes = hashlib.pbkdf2_hmac("sha256", passwrd, _SALT, 100000)
     return enc_passwrd
 
@@ -33,7 +33,7 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
         -> Dict[str, bytes]:
     if not isinstance(text, bytes) \
             or not isinstance(key, bytes) or not isinstance(iv, bytes):
-        raise Error("Error in security.encrypt(): Invalid input type")
+        raise security_Error("Error in security.encrypt(): Invalid input type")
     cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv=iv)
 
     checker1 = Padding.pad(text, AES.block_size)
@@ -41,12 +41,12 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
     ct: bytes = cipher.encrypt(checker1)
     if isinstance(ct, bytes) and isinstance(iv, bytes):
         return {'ciphertext': ct, "iv": iv}
-    raise Error("Error in security.encrypt(): Invalid output type")
+    raise security_Error("Error in security.encrypt(): Invalid output type")
 
 
 def encrypt_new(text: bytes, key: bytes) -> Dict[str, bytes]:
     if not isinstance(text, bytes) or not isinstance(key, bytes):
-        raise Error("Error in security.encrypt(): Invalid input type")
+        raise security_Error("Error in security.encrypt(): Invalid input type")
     cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC)
 
     checker1 = Padding.pad(text, AES.block_size)
@@ -55,7 +55,7 @@ def encrypt_new(text: bytes, key: bytes) -> Dict[str, bytes]:
     iv: bytes = cipher.iv
     if isinstance(ct, bytes) and isinstance(iv, bytes):
         return {'ciphertext': ct, "iv": iv}
-    raise Error("Error in security.encrypt(): Invalid output type")
+    raise security_Error("Error in security.encrypt(): Invalid output type")
 
 
 def decrypt(encrypted_data: Dict[str, bytes], key: bytes) -> bytes:
@@ -63,11 +63,11 @@ def decrypt(encrypted_data: Dict[str, bytes], key: bytes) -> bytes:
     iv: bytes = encrypted_data["iv"]
     if not isinstance(ct, bytes) or not isinstance(iv, bytes) \
             or not isinstance(key, bytes):
-        raise Error("Error in security.decrypt(): Invalid input type")
+        raise security_Error("Error in security.decrypt(): Invalid input type")
 
     cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv)
     checker1 = Padding.unpad(
         cipher.decrypt(ct), AES.block_size)
     if not isinstance(checker1, bytes):
-        raise Error("Error in security.decrypt(): Invalid output type")
+        raise security_Error("Error in security.decrypt(): Invalid output type")
     return checker1

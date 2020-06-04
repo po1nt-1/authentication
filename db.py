@@ -1,9 +1,9 @@
 import sqlite3
 import os
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 
-class Error(Exception):
+class db_Error(Exception):
     pass
 
 
@@ -20,16 +20,18 @@ def open_db() -> int:
     global c
 
     try:
-        if os.path.exists('authentication/service'):
-            conn = sqlite3.connect('authentication/service/database.db')
+        if os.path.exists(os.path.join('authentication', 'service')):
+            conn = sqlite3.connect(os.path.join(
+                'authentication', 'service', 'database.db'))
             c = conn.cursor()
         else:
-            os.mkdir('authentication/service')
-            conn = sqlite3.connect('authentication/service/database.db')
+            os.mkdir(os.path.join('authentication', 'service'))
+            conn = sqlite3.connect(os.path.join(
+                'authentication', 'service', 'database.db'))
             c = conn.cursor()
         return 0
     except sqlite3.Error as e:
-        raise Error("Error in db.open_db(): " + str(e))
+        raise db_Error("Error in db.open_db(): " + str(e))
 
 
 def close_db() -> int:
@@ -38,7 +40,7 @@ def close_db() -> int:
         conn.close()
         return 0
     except sqlite3.Error as e:
-        raise Error("Error in db.close_db(): " + str(e))
+        raise db_Error("Error in db.close_db(): " + str(e))
 
 
 def create_table() -> int:
@@ -61,7 +63,7 @@ def create_table() -> int:
             """)
         return 0
     except sqlite3.Error as e:
-        raise Error("Error in db.create_table(): " + str(e))
+        raise db_Error("Error in db.create_table(): " + str(e))
 
 
 def insert(login: str, hash: bytes, dir: str,
@@ -71,11 +73,11 @@ def insert(login: str, hash: bytes, dir: str,
     if not isinstance(login, str) or not isinstance(hash, bytes) \
             or not isinstance(dir, str) or not isinstance(enc_key, bytes) \
             or not isinstance(iv, bytes):
-        raise Error("Error in db.insert(): Incorrect login type")
+        raise db_Error("Error in db.insert(): Invalid login type")
     if len(login) < 1:
-        raise Error("Error in db.insert(): Incorrect login length")
+        raise db_Error("Error in db.insert(): Invalid login length")
     if login == 'None':
-        raise Error(
+        raise db_Error(
             f"Error in db.insert(): You can not use {login} as a login")
     try:
         with conn:
@@ -85,29 +87,29 @@ def insert(login: str, hash: bytes, dir: str,
                       (login, hash, dir, enc_key, iv))
         return 0
     except sqlite3.IntegrityError as e:
-        raise Error("Error in db.insert(): " + str(e))
+        raise db_Error("Error in db.insert(): " + str(e))
 
 
 def cut(login: str) -> int:
     global conn
     global c
     if not isinstance(login, str):
-        raise Error("Error in db.cut(): Incorrect login type")
+        raise db_Error("Error in db.cut(): Invalid login type")
     if len(login) < 1:
-        raise Error("Error in db.cut(): Incorrect login length")
+        raise db_Error("Error in db.cut(): Invalid login length")
 
     with conn:
         c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
         info: Tuple[str, bytes, str, bytes] = c.fetchone()
         if info is None:
-            raise Error("Error in db.cut(): Incorrect login")
+            raise db_Error("Error in db.cut(): Invalid login")
 
     try:
         with conn:
             c.execute("""DELETE FROM users WHERE login=?""", (login, ))
         return 0
     except sqlite3.IntegrityError as e:
-        raise Error("Error in db.cut(): " + str(e))
+        raise db_Error("Error in db.cut(): " + str(e))
 
 
 def update(login: str = 'None', hash: bytes = b'None',
@@ -117,16 +119,16 @@ def update(login: str = 'None', hash: bytes = b'None',
     global c
 
     if login == 'None':
-        raise Error("Error in db.update(): Login not specified")
+        raise db_Error("Error in db.update(): Login not specified")
 
     try:
         with conn:
             c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
             if c.fetchone() is None:
-                raise Error(
+                raise db_Error(
                     f"Error in db.update(): User with login {login} not found")
     except sqlite3.IntegrityError as e:
-        raise Error("Error in db.update(): " + str(e))
+        raise db_Error("Error in db.update(): " + str(e))
 
     temp_values: List[object] = [
         login, hash, dir, enc_key, iv]
@@ -135,9 +137,9 @@ def update(login: str = 'None', hash: bytes = b'None',
 
     for i in range(len(temp_values)):
         if not isinstance(temp_values[i], temp_types[i]):
-            raise Error("Error in db.update(): Incorrect data type")
+            raise db_Error("Error in db.update(): Invalid data type")
         if len(temp_values[i]) < 1:
-            raise Error("Error in db.update(): Incorrect data length")
+            raise db_Error("Error in db.update(): Invalid data length")
 
     try:
         with conn:
@@ -155,12 +157,12 @@ def update(login: str = 'None', hash: bytes = b'None',
                 UPDATE users SET iv=? WHERE login=?""", (iv, login))
         return 0
     except sqlite3.IntegrityError as e:
-        raise Error("Error in db.update(): " + str(e))
+        raise db_Error("Error in db.update(): " + str(e))
 
 
-def info(login: str) -> Tuple[str, bytes, str, bytes, bytes]:
+def info(login: str) -> Union[Tuple[str, bytes, str, bytes, bytes], None]:
     if not isinstance(login, str):
-        raise Error("Error in db.info(): Invalid input type")
+        raise db_Error("Error in db.info(): Invalid input type")
     global conn
     global c
     try:
@@ -168,9 +170,11 @@ def info(login: str) -> Tuple[str, bytes, str, bytes, bytes]:
             c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
             info: Tuple[str, bytes, str, bytes, bytes] = c.fetchone()
     except sqlite3.IntegrityError as e:
-        raise Error("Error in db.info(): " + str(e))
+        raise db_Error("Error in db.info(): " + str(e))
+    if info is None:
+        return None
     if not isinstance(info[0], str) or not isinstance(info[1], bytes) \
             or not isinstance(info[2], str) or not isinstance(info[3], bytes) \
             or not isinstance(info[4], bytes):
-        raise Error("Error in db.info(): Invalid output type")
+        raise db_Error("Error in db.info(): Invalid output type")
     return info
