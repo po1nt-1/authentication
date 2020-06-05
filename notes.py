@@ -93,17 +93,17 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
 def _visual(path: str) -> None:
     if not isinstance(path, str):
         raise notes_Error("Error in notes._visual(): Invalid input type")
-    path_ = path + '_temp'
-    if os.name == 'posix':
-        soft = ['kate', 'vim', 'geany', 'gedit', 'nano']
+    path_ = path + "_temp"
+    if os.name == "posix":
+        soft = ["kate", "vim", "geany", "gedit", "nano"]
         for elem in soft:
             try:
                 m = subprocess.run([elem, path_])   # type: ignore
                 return None
             except FileNotFoundError:
                 continue
-    elif os.name == 'nt':
-        k = subprocess.run(['notepad', path_])  # type: ignore
+    elif os.name == "nt":
+        k = subprocess.run(["notepad", path_])  # type: ignore
         return None
     raise notes_Error(
         "Error in notes._visual(): Operating system not supported")
@@ -114,7 +114,7 @@ def write(login: str, master_key: bytes, name: str) -> None:
             or not isinstance(master_key, bytes):
         raise notes_Error("Error in notes.write(): Invalid input type")
 
-    path_ = os.path.join('authentication', 'notes', login, name)
+    path_ = os.path.join("notes", login, name)
     if os.path.exists(path_):
         os.remove(path_)
 
@@ -126,7 +126,7 @@ def write(login: str, master_key: bytes, name: str) -> None:
         raise notes_Error(
             "Error in notes.write(): Invalid work of the text editor")
 
-    with open(path_ + "_temp", 'r', encoding="utf-8") as t:
+    with open(path_ + "_temp", "r", encoding="utf-8") as t:
         text: str = t.read()
     os.remove(path_ + "_temp")
 
@@ -146,7 +146,7 @@ def edit(login: str, master_key: bytes, name: str) -> None:
             or not isinstance(master_key, bytes):
         raise notes_Error("Error in notes.edit(): Invalid input type")
 
-    path_ = os.path.join('authentication', 'notes', login, name)
+    path_ = os.path.join("notes", login, name)
     if not os.path.exists(path_):
         raise notes_Error("Error in notes.edit(): Note does not exist")
 
@@ -165,7 +165,7 @@ def edit(login: str, master_key: bytes, name: str) -> None:
         raise notes_Error(str(e))
     text: str = str(checker1)
 
-    with open(path_ + '_temp', "w", encoding="utf-8") as t:
+    with open(path_ + "_temp", 'w', encoding="utf-8") as t:
         t.write(text)
 
     try:
@@ -173,10 +173,10 @@ def edit(login: str, master_key: bytes, name: str) -> None:
     except notes_Error as e:
         raise notes_Error(str(e))
 
-    with open(path_ + '_temp', "r", encoding="utf-8") as t:
+    with open(path_ + "_temp", 'r', encoding="utf-8") as t:
         new_text: str = t.read()
 
-    os.remove(path_ + '_temp')
+    os.remove(path_ + "_temp")
 
     try:
         checker3 = _encrypt_text(login, master_key, new_text)
@@ -193,7 +193,7 @@ def note_list(login: str) -> Tuple[str, ...]:
     if not isinstance(login, str):
         raise notes_Error("Error in notes.note_list(): Invalid input type")
 
-    path_ = os.path.join('authentication', 'notes', login)
+    path_ = os.path.join("notes", login)
     notes = tuple(os.listdir(path_))
     return notes
 
@@ -202,7 +202,7 @@ def delete(login: str, name: str) -> None:
     if not isinstance(login, str) or not isinstance(name, str):
         raise notes_Error("Error in notes.delete(): Invalid input type")
 
-    path_ = os.path.join('authentication', 'notes', login, name)
+    path_ = os.path.join("notes", login, name)
     if os.path.exists(path_):
         os.remove(path_)
         return None
@@ -214,11 +214,11 @@ def delete_all(login: str) -> None:
     if not isinstance(login, str):
         raise notes_Error("Error in notes.delete_all(): Invalid input type")
 
-    path_ = os.path.join('authentication', 'notes', login)
+    path_ = os.path.join("notes", login)
     notes = tuple(os.listdir(path_))
 
     for note in notes:
-        path_ = os.path.join('authentication', 'notes', login, note)
+        path_ = os.path.join("notes", login, note)
         if os.path.exists(path_):
             os.remove(path_)
         else:

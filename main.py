@@ -66,7 +66,7 @@ def create_account() -> None:
         raise Error(str(e))
     password_bytes_hash: bytes = checker3
 
-    dirr: str = os.path.join("authentication", "notes", login)
+    dirr: str = os.path.join("notes", login)
 
     if os.path.exists(dirr):
         shutil.rmtree(dirr)
@@ -118,7 +118,7 @@ def auth() -> Tuple[str, bytes]:
         raise Error(
             f"Error in main.auth(): '{''.join(error_list)}' is not allowed")
 
-    dirr: str = os.path.join("authentication", "notes", login)
+    dirr: str = os.path.join("notes", login)
     if not os.path.exists(dirr):
         os.mkdir(dirr)
 
@@ -161,8 +161,8 @@ def delete_account(login: str) -> None:
 
     dirr = info[2]
 
-    if os.path.exists(dirr):
-        shutil.rmtree(dirr)
+    if os.path.exists(dirr):    # type: ignore
+        shutil.rmtree(dirr)     # type: ignore
 
     try:
         checker2 = db.cut(login)
@@ -175,14 +175,15 @@ def delete_account(login: str) -> None:
 
 def change_key(login: str, master_key: bytes) -> None:
     try:
-        checker1 = db.info(login)
+        checker1: Union[Tuple[str, bytes, str,
+                              bytes, bytes], None] = db.info(login)
         if checker1 is None:
             raise Error(
                 "Error in main.change_key(): A user with this login " +
                 "is not registered")
     except db.db_Error as e:
         raise Error(str(e))
-    info: Tuple[object, ...] = tuple(checker1)
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
 
     encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
 
@@ -212,14 +213,15 @@ def change_key(login: str, master_key: bytes) -> None:
 
 def change_pass(login: str, old_master_key: bytes) -> None:
     try:
-        checker1 = db.info(login)
+        checker1: Union[Tuple[str, bytes, str,
+                              bytes, bytes], None] = db.info(login)
         if checker1 is None:
             raise Error(
                 "Error in main.change_pass(): A user with this login " +
                 "is not registered")
     except db.db_Error as e:
         raise Error(str(e))
-    info: Tuple[object, ...] = tuple(checker1)
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
 
     password: str = input("Enter your new password: ")
     if len(password) < 1 or not isinstance(login, str):
@@ -271,7 +273,7 @@ def change_pass(login: str, old_master_key: bytes) -> None:
 
 
 def start() -> int:
-    path = os.path.join("authentication", "notes")
+    path = os.path.join("notes")
     if not os.path.exists(path):
         os.mkdir(path)
     try:
@@ -337,7 +339,7 @@ def account(login: str, master_key: bytes) -> int:
         choice = input("Your choice: ")
         try:
             if int(choice) == 1:
-                if _confirm('password change'):
+                if _confirm("password change"):
                     try:
                         change_pass(login, master_key)
                     except Error as e:
@@ -345,7 +347,7 @@ def account(login: str, master_key: bytes) -> int:
                     return -1
                 continue
             elif int(choice) == 2:
-                if _confirm('encryption key change'):
+                if _confirm("encryption key change"):
                     try:
                         change_key(login, master_key)
                     except Error as e:
@@ -353,7 +355,7 @@ def account(login: str, master_key: bytes) -> int:
                     return -1
                 continue
             elif int(choice) == 3:
-                if _confirm('deletion'):
+                if _confirm("deletion"):
                     try:
                         delete_account(login)
                     except Error as e:
@@ -405,41 +407,41 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                     print("The list of notes is empty")
                 continue
             elif int(choice) == 2:
-                checker2 = _note_name()
+                checker2: Union[str, int] = _note_name()
                 if checker2 == -1:
                     continue
-                note_name = checker2
+                note_name1 = str(checker2)
                 try:
-                    notes.write(login, master_key, note_name)
+                    notes.write(login, master_key, note_name1)
                     print("Note created")
                 except notes.notes_Error as e:
                     print(str(e))
                 continue
             elif int(choice) == 3:
-                checker3 = _note_name()
+                checker3: Union[str, int] = _note_name()
                 if checker3 == -1:
                     continue
-                note_name = checker3
+                note_name2 = str(checker3)
                 try:
-                    notes.edit(login, master_key, note_name)
+                    notes.edit(login, master_key, note_name2)
                     print("Note saved")
                 except notes.notes_Error as e:
                     print(str(e))
                 continue
             elif int(choice) == 4:
-                checker4 = _note_name()
+                checker4: Union[str, int] = _note_name()
                 if checker4 == -1:
                     continue
-                note_name = checker4
-                if _confirm('deletion'):
+                note_name3 = str(checker4)
+                if _confirm("deletion"):
                     try:
-                        notes.delete(login, note_name)
+                        notes.delete(login, note_name3)
                         print("Note deleted")
                     except notes.notes_Error as e:
                         print(str(e))
                 continue
             elif int(choice) == 5:
-                if _confirm('deletion'):
+                if _confirm("deletion"):
                     try:
                         notes.delete_all(login)
                         print("All notes deleted")
@@ -523,4 +525,15 @@ def user_interface() -> None:
             continue
 
 
-user_interface()
+def main() -> int:
+    ch = os.path.abspath(os.curdir)
+    if "authentication" not in ch:
+        print("Error: main.py needs to be run " +
+              "from the directory /authentication")
+        return -1
+    user_interface()
+    return 0
+
+
+if __name__ == "__main__":
+    main()
