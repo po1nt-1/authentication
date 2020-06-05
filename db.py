@@ -124,11 +124,7 @@ def update(login: str = 'None', hash: bytes = b'None',
     try:
         with conn:
             c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
-<<<<<<< HEAD
             if c.fetchone() is None:    # type: ignore
-=======
-            if c.fetchone() is None:
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
                 raise db_Error(
                     f"Error in db.update(): User with login {login} not found")
     except sqlite3.IntegrityError as e:

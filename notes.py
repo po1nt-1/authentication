@@ -11,11 +11,7 @@ class notes_Error(Exception):
 
 
 def _encrypt_text(login: str, master_key: bytes,
-<<<<<<< HEAD
                   text: str) -> bytes:
-=======
-                 text: str) -> bytes:
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
     if not isinstance(login, str) or not isinstance(master_key, bytes) \
             or not isinstance(text, str):
         raise notes_Error("Error in notes._encrypt_text(): Invalid input type")
@@ -33,11 +29,7 @@ def _encrypt_text(login: str, master_key: bytes,
                         User with login {login} not found")
     except db.db_Error as e:
         raise notes_Error(str(e))
-<<<<<<< HEAD
     info: Tuple[str, bytes, str, bytes, bytes] = checker1
-=======
-    info: Tuple[object, ...] = tuple(checker1)
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
 
     encrypted_data: Dict[str, bytes] = {
         "ciphertext": info[3], "iv": info[4]}
@@ -54,12 +46,8 @@ def _encrypt_text(login: str, master_key: bytes,
         raise notes_Error(str(e))
     ct: bytes = checker3["ciphertext"]
     if not isinstance(ct, bytes):
-<<<<<<< HEAD
         raise notes_Error(
             "Error in notes._encrypt_text(): Invalid output type")
-=======
-        raise notes_Error("Error in notes._encrypt_text(): Invalid output type")
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
     return ct
 
 
@@ -76,11 +64,7 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
                         User with login {login} not found")
     except db.db_Error as e:
         raise notes_Error(str(e))
-<<<<<<< HEAD
     info: Tuple[str, bytes, str, bytes, bytes] = checker1
-=======
-    info: Tuple[object, ...] = tuple(checker1)
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
 
     encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
 
@@ -101,12 +85,8 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
     result = text.decode(encoding="utf-8")
 
     if not isinstance(result, str):
-<<<<<<< HEAD
         raise notes_Error(
             "Error in notes._decrypt_text(): Invalid output type")
-=======
-        raise notes_Error("Error in notes._decrypt_text(): Invalid output type")
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
     return result
 
 

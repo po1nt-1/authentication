@@ -21,12 +21,8 @@ def hash(data: bytes) -> bytes:
 
 def gen_master_key(passwrd: bytes) -> bytes:
     if not isinstance(passwrd, bytes):
-<<<<<<< HEAD
         raise security_Error(
             "Error in security.gen_master_key(): Invalid input type")
-=======
-        raise security_Error("Error in security.gen_master_key(): Invalid input type")
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
     enc_passwrd: bytes = hashlib.pbkdf2_hmac("sha256", passwrd, _SALT, 100000)
     return enc_passwrd
 
@@ -40,14 +36,10 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
     if not isinstance(text, bytes) \
             or not isinstance(key, bytes) or not isinstance(iv, bytes):
         raise security_Error("Error in security.encrypt(): Invalid input type")
-<<<<<<< HEAD
     cipher = AES.new(key, AES.MODE_CBC, iv=iv)
     if not isinstance(cipher, Crypto.Cipher._mode_cbc.CbcMode):
         raise security_Error(
             "Error in security.encrypt(): Invalid return type")
-=======
-    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv=iv)
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
 
     checker1 = Padding.pad(text, AES.block_size)
 
@@ -60,14 +52,10 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
 def encrypt_new(text: bytes, key: bytes) -> Dict[str, bytes]:
     if not isinstance(text, bytes) or not isinstance(key, bytes):
         raise security_Error("Error in security.encrypt(): Invalid input type")
-<<<<<<< HEAD
     cipher = AES.new(key, AES.MODE_CBC)
     if not isinstance(cipher, Crypto.Cipher._mode_cbc.CbcMode):
         raise security_Error(
             "Error in security.encrypt_new(): Invalid return type")
-=======
-    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC)
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
 
     checker1 = Padding.pad(text, AES.block_size)
 
@@ -92,10 +80,6 @@ def decrypt(encrypted_data: Dict[str, bytes], key: bytes) -> bytes:
     checker1 = Padding.unpad(
         cipher.decrypt(ct), AES.block_size)
     if not isinstance(checker1, bytes):
-<<<<<<< HEAD
         raise security_Error(
             "Error in security.decrypt(): Invalid output type")
-=======
-        raise security_Error("Error in security.decrypt(): Invalid output type")
->>>>>>> 4c54057f4a3c5e764a96cae717e7ce3db61e0136
     return checker1
