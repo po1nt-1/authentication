@@ -124,15 +124,15 @@ def update(login: str = 'None', hash: bytes = b'None',
     try:
         with conn:
             c.execute("""SELECT * FROM users WHERE login=?""", (login, ))
-            if c.fetchone() is None:
+            if c.fetchone() is None:    # type: ignore
                 raise db_Error(
                     f"Error in db.update(): User with login {login} not found")
     except sqlite3.IntegrityError as e:
         raise db_Error("Error in db.update(): " + str(e))
 
-    temp_values: List[object] = [
+    temp_values: List[Union[str, bytes, str, bytes, bytes]] = [
         login, hash, dir, enc_key, iv]
-    temp_types: List[object] = [
+    temp_types: List[type] = [
         str, bytes, str, bytes, bytes]
 
     for i in range(len(temp_values)):

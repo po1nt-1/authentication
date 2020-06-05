@@ -3,7 +3,7 @@ import db
 import os
 import pickle
 import subprocess
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union, List
 
 
 class notes_Error(Exception):
@@ -11,7 +11,7 @@ class notes_Error(Exception):
 
 
 def _encrypt_text(login: str, master_key: bytes,
-                 text: str) -> bytes:
+                  text: str) -> bytes:
     if not isinstance(login, str) or not isinstance(master_key, bytes) \
             or not isinstance(text, str):
         raise notes_Error("Error in notes._encrypt_text(): Invalid input type")
@@ -22,15 +22,17 @@ def _encrypt_text(login: str, master_key: bytes,
             "Error in notes._encrypt_text(): Invalid text encoding")
 
     try:
-        checker1 = db.info(login)
+        checker1: Union[Tuple[str, bytes, str,
+                              bytes, bytes], None] = db.info(login)
         if checker1 is None:
             raise notes_Error(f"Error in notes._encrypt_text(): \
                         User with login {login} not found")
     except db.db_Error as e:
         raise notes_Error(str(e))
-    info: Tuple[object, ...] = tuple(checker1)
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
 
-    encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
+    encrypted_data: Dict[str, bytes] = {
+        "ciphertext": info[3], "iv": info[4]}
 
     try:
         checker2 = security.decrypt(encrypted_data, master_key)
@@ -44,7 +46,8 @@ def _encrypt_text(login: str, master_key: bytes,
         raise notes_Error(str(e))
     ct: bytes = checker3["ciphertext"]
     if not isinstance(ct, bytes):
-        raise notes_Error("Error in notes._encrypt_text(): Invalid output type")
+        raise notes_Error(
+            "Error in notes._encrypt_text(): Invalid output type")
     return ct
 
 
@@ -54,13 +57,14 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
         raise notes_Error("Error in notes._decrypt_text(): Invalid input type")
 
     try:
-        checker1 = db.info(login)
+        checker1: Union[Tuple[str, bytes, str,
+                              bytes, bytes], None] = db.info(login)
         if checker1 is None:
             raise notes_Error(f"Error in notes._encrypt_text(): \
                         User with login {login} not found")
     except db.db_Error as e:
         raise notes_Error(str(e))
-    info: Tuple[object, ...] = tuple(checker1)
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
 
     encrypted_data: Dict[str, bytes] = {"ciphertext": info[3], "iv": info[4]}
 
@@ -81,7 +85,8 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
     result = text.decode(encoding="utf-8")
 
     if not isinstance(result, str):
-        raise notes_Error("Error in notes._decrypt_text(): Invalid output type")
+        raise notes_Error(
+            "Error in notes._decrypt_text(): Invalid output type")
     return result
 
 
@@ -93,12 +98,12 @@ def _visual(path: str) -> None:
         soft = ['kate', 'vim', 'geany', 'gedit', 'nano']
         for elem in soft:
             try:
-                m = subprocess.run([elem, path_])
+                m = subprocess.run([elem, path_])   # type: ignore
                 return None
             except FileNotFoundError:
                 continue
     elif os.name == 'nt':
-        m = subprocess.run(['notepad', path_])
+        k = subprocess.run(['notepad', path_])  # type: ignore
         return None
     raise notes_Error(
         "Error in notes._visual(): Operating system not supported")

@@ -1,3 +1,4 @@
+import Crypto
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Util import Padding
@@ -20,7 +21,8 @@ def hash(data: bytes) -> bytes:
 
 def gen_master_key(passwrd: bytes) -> bytes:
     if not isinstance(passwrd, bytes):
-        raise security_Error("Error in security.gen_master_key(): Invalid input type")
+        raise security_Error(
+            "Error in security.gen_master_key(): Invalid input type")
     enc_passwrd: bytes = hashlib.pbkdf2_hmac("sha256", passwrd, _SALT, 100000)
     return enc_passwrd
 
@@ -34,7 +36,10 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
     if not isinstance(text, bytes) \
             or not isinstance(key, bytes) or not isinstance(iv, bytes):
         raise security_Error("Error in security.encrypt(): Invalid input type")
-    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv=iv)
+    cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+    if not isinstance(cipher, Crypto.Cipher._mode_cbc.CbcMode):
+        raise security_Error(
+            "Error in security.encrypt(): Invalid return type")
 
     checker1 = Padding.pad(text, AES.block_size)
 
@@ -47,7 +52,10 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
 def encrypt_new(text: bytes, key: bytes) -> Dict[str, bytes]:
     if not isinstance(text, bytes) or not isinstance(key, bytes):
         raise security_Error("Error in security.encrypt(): Invalid input type")
-    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC)
+    cipher = AES.new(key, AES.MODE_CBC)
+    if not isinstance(cipher, Crypto.Cipher._mode_cbc.CbcMode):
+        raise security_Error(
+            "Error in security.encrypt_new(): Invalid return type")
 
     checker1 = Padding.pad(text, AES.block_size)
 
@@ -65,9 +73,13 @@ def decrypt(encrypted_data: Dict[str, bytes], key: bytes) -> bytes:
             or not isinstance(key, bytes):
         raise security_Error("Error in security.decrypt(): Invalid input type")
 
-    cipher: Crypto.Cipher._mode_cbc.CbcMode = AES.new(key, AES.MODE_CBC, iv)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    if not isinstance(cipher, Crypto.Cipher._mode_cbc.CbcMode):
+        raise security_Error(
+            "Error in security.encrypt_new(): Invalid return type")
     checker1 = Padding.unpad(
         cipher.decrypt(ct), AES.block_size)
     if not isinstance(checker1, bytes):
-        raise security_Error("Error in security.decrypt(): Invalid output type")
+        raise security_Error(
+            "Error in security.decrypt(): Invalid output type")
     return checker1
