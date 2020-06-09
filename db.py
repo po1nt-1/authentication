@@ -20,12 +20,17 @@ def open_db() -> int:
     global c
 
     try:
-        if os.path.exists(os.path.join("service")):
-            conn = sqlite3.connect(os.path.join("service", "database.db"))
+        if os.name != "posix" and os.name != "nt":
+            raise db_Error(
+                "Error in db.open_db(): Operating system not supported")
+        if os.path.exists(os.path.join('authentication', 'service')):
+            conn = sqlite3.connect(os.path.join(
+                'authentication', 'service', 'database.db'))
             c = conn.cursor()
         else:
-            os.mkdir(os.path.join("service"))
-            conn = sqlite3.connect(os.path.join("service", "database.db"))
+            os.mkdir(os.path.join('authentication', 'service'))
+            conn = sqlite3.connect(os.path.join(
+                'authentication', 'service', 'database.db'))
             c = conn.cursor()
         return 0
     except sqlite3.Error as e:
@@ -74,7 +79,7 @@ def insert(login: str, hash: bytes, dir: str,
         raise db_Error("Error in db.insert(): Invalid login type")
     if len(login) < 1:
         raise db_Error("Error in db.insert(): Invalid login length")
-    if login == "None":
+    if login == 'None':
         raise db_Error(
             f"Error in db.insert(): You can not use {login} as a login")
     try:
@@ -110,13 +115,13 @@ def cut(login: str) -> int:
         raise db_Error("Error in db.cut(): " + str(e))
 
 
-def update(login: str = "None", hash: bytes = b"None",
-           dir: str = "None", enc_key: bytes = b"None",
-           iv: bytes = b"None") -> int:
+def update(login: str = 'None', hash: bytes = b'None',
+           dir: str = 'None', enc_key: bytes = b'None',
+           iv: bytes = b'None') -> int:
     global conn
     global c
 
-    if login == "None":
+    if login == 'None':
         raise db_Error("Error in db.update(): Login not specified")
 
     try:
@@ -141,16 +146,16 @@ def update(login: str = "None", hash: bytes = b"None",
 
     try:
         with conn:
-            if hash != b"None":
+            if hash != b'None':
                 c.execute("""
                 UPDATE users SET hash=? WHERE login=?""", (hash, login))
-            if dir != "None":
+            if dir != 'None':
                 c.execute("""
                 UPDATE users SET dir=? WHERE login=?""", (dir, login))
-            if enc_key != b"None":
+            if enc_key != b'None':
                 c.execute("""
                 UPDATE users SET enc_key=? WHERE login=?""", (enc_key, login))
-            if iv != b"None":
+            if iv != b'None':
                 c.execute("""
                 UPDATE users SET iv=? WHERE login=?""", (iv, login))
         return 0

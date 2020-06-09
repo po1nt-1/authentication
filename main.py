@@ -66,7 +66,11 @@ def create_account() -> None:
         raise Error(str(e))
     password_bytes_hash: bytes = checker3
 
-    dirr: str = os.path.join("notes", login)
+    if os.name == "posix" or os.name == "nt":
+        dirr: str = os.path.join("authentication", "notes", login)
+    else:
+        raise Error(
+            "Error in main.create_account(): Operating system not supported")
 
     if os.path.exists(dirr):
         shutil.rmtree(dirr)
@@ -118,7 +122,11 @@ def auth() -> Tuple[str, bytes]:
         raise Error(
             f"Error in main.auth(): '{''.join(error_list)}' is not allowed")
 
-    dirr: str = os.path.join("notes", login)
+    if os.name == "posix" or os.name == "nt":
+        dirr: str = os.path.join("authentication", "notes", login)
+    else:
+        raise Error("Error in main.auth(): Operating system not supported")
+
     if not os.path.exists(dirr):
         os.mkdir(dirr)
 
@@ -136,8 +144,8 @@ def auth() -> Tuple[str, bytes]:
         raise Error(str(e))
     password_bytes_hash: bytes = checker3
 
-    info: Tuple[object, ...] = tuple(checker1)
-    password_bytes_hash_orig = info[1]
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
+    password_bytes_hash_orig: bytes = info[1]
 
     if password_bytes_hash != password_bytes_hash_orig:
         raise Error("Error in main.auth(): Wrong password")
@@ -157,12 +165,12 @@ def delete_account(login: str) -> None:
                 "is not registered")
     except db.db_Error as e:
         raise Error(str(e))
-    info: Tuple[object, ...] = tuple(checker1)
+    info: Tuple[str, bytes, str, bytes, bytes] = checker1
 
-    dirr = info[2]
+    dirr: str = info[2]
 
-    if os.path.exists(dirr):    # type: ignore
-        shutil.rmtree(dirr)     # type: ignore
+    if os.path.exists(dirr):
+        shutil.rmtree(dirr)
 
     try:
         checker2 = db.cut(login)
@@ -175,8 +183,7 @@ def delete_account(login: str) -> None:
 
 def change_key(login: str, master_key: bytes) -> None:
     try:
-        checker1: Union[Tuple[str, bytes, str,
-                              bytes, bytes], None] = db.info(login)
+        checker1 = db.info(login)
         if checker1 is None:
             raise Error(
                 "Error in main.change_key(): A user with this login " +
@@ -213,8 +220,7 @@ def change_key(login: str, master_key: bytes) -> None:
 
 def change_pass(login: str, old_master_key: bytes) -> None:
     try:
-        checker1: Union[Tuple[str, bytes, str,
-                              bytes, bytes], None] = db.info(login)
+        checker1 = db.info(login)
         if checker1 is None:
             raise Error(
                 "Error in main.change_pass(): A user with this login " +
@@ -273,7 +279,11 @@ def change_pass(login: str, old_master_key: bytes) -> None:
 
 
 def start() -> int:
-    path = os.path.join("notes")
+    if os.name == "posix" or os.name == "nt":
+        path = os.path.join("authentication", "notes")
+    else:
+        raise Error("Error in main.start(): Operating system not supported")
+
     if not os.path.exists(path):
         os.mkdir(path)
     try:
@@ -339,7 +349,7 @@ def account(login: str, master_key: bytes) -> int:
         choice = input("Your choice: ")
         try:
             if int(choice) == 1:
-                if _confirm("password change"):
+                if _confirm('password change'):
                     try:
                         change_pass(login, master_key)
                     except Error as e:
@@ -347,7 +357,7 @@ def account(login: str, master_key: bytes) -> int:
                     return -1
                 continue
             elif int(choice) == 2:
-                if _confirm("encryption key change"):
+                if _confirm('encryption key change'):
                     try:
                         change_key(login, master_key)
                     except Error as e:
@@ -355,7 +365,7 @@ def account(login: str, master_key: bytes) -> int:
                     return -1
                 continue
             elif int(choice) == 3:
-                if _confirm("deletion"):
+                if _confirm('deletion'):
                     try:
                         delete_account(login)
                     except Error as e:
@@ -385,6 +395,8 @@ def _note_name() -> Union[str, int]:
     if len(error_list) != 0:
         print(f"Error: '{''.join(error_list)}' is not allowed")
         return -1
+    if not isinstance(note_name, str):
+        raise Error("Error in main._note_name(): Invalid output type")
     return note_name
 
 
@@ -410,9 +422,9 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker2: Union[str, int] = _note_name()
                 if checker2 == -1:
                     continue
-                note_name1 = str(checker2)
+                note_name2: str = checker2
                 try:
-                    notes.write(login, master_key, note_name1)
+                    notes.write(login, master_key, note_name2)
                     print("Note created")
                 except notes.notes_Error as e:
                     print(str(e))
@@ -421,9 +433,9 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker3: Union[str, int] = _note_name()
                 if checker3 == -1:
                     continue
-                note_name2 = str(checker3)
+                note_name3: str = checker3
                 try:
-                    notes.edit(login, master_key, note_name2)
+                    notes.edit(login, master_key, note_name3)
                     print("Note saved")
                 except notes.notes_Error as e:
                     print(str(e))
@@ -432,16 +444,16 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker4: Union[str, int] = _note_name()
                 if checker4 == -1:
                     continue
-                note_name3 = str(checker4)
-                if _confirm("deletion"):
+                note_name4: str = checker4
+                if _confirm('deletion'):
                     try:
-                        notes.delete(login, note_name3)
+                        notes.delete(login, note_name4)
                         print("Note deleted")
                     except notes.notes_Error as e:
                         print(str(e))
                 continue
             elif int(choice) == 5:
-                if _confirm("deletion"):
+                if _confirm('deletion'):
                     try:
                         notes.delete_all(login)
                         print("All notes deleted")
@@ -459,7 +471,7 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
     return 0
 
 
-def authorization() -> int:
+def account_menu() -> int:
     try:
         cache: Tuple[str, bytes] = auth()
     except Error as e:
@@ -493,7 +505,7 @@ def authorization() -> int:
     return 0
 
 
-def user_interface() -> None:
+def main_menu() -> None:
     while True:
         if start() == -1:
             break
@@ -510,7 +522,7 @@ def user_interface() -> None:
                     break
                 continue
             elif int(choice) == 2:
-                authorization()
+                account_menu()
                 if stop() == -1:
                     break
                 continue
@@ -525,15 +537,4 @@ def user_interface() -> None:
             continue
 
 
-def main() -> int:
-    ch = os.path.abspath(os.curdir)
-    if "authentication" not in ch:
-        print("Error: main.py needs to be run " +
-              "from the directory /authentication")
-        return -1
-    user_interface()
-    return 0
-
-
-if __name__ == "__main__":
-    main()
+main_menu()

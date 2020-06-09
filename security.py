@@ -10,7 +10,7 @@ class security_Error(Exception):
     pass
 
 
-_SALT: bytes = b"8_TuDUK9IpJKaM7NWkpSQcMlVh0ZoEmYdeIOjvItOSk="
+_SALT: bytes = b'8_TuDUK9IpJKaM7NWkpSQcMlVh0ZoEmYdeIOjvItOSk='
 
 
 def hash(data: bytes) -> bytes:
@@ -45,7 +45,7 @@ def encrypt(text: bytes, key: bytes, iv: bytes) \
 
     ct: bytes = cipher.encrypt(checker1)
     if isinstance(ct, bytes) and isinstance(iv, bytes):
-        return {"ciphertext": ct, "iv": iv}
+        return {'ciphertext': ct, "iv": iv}
     raise security_Error("Error in security.encrypt(): Invalid output type")
 
 
@@ -62,7 +62,7 @@ def encrypt_new(text: bytes, key: bytes) -> Dict[str, bytes]:
     ct: bytes = cipher.encrypt(checker1)
     iv: bytes = cipher.iv
     if isinstance(ct, bytes) and isinstance(iv, bytes):
-        return {"ciphertext": ct, "iv": iv}
+        return {'ciphertext': ct, "iv": iv}
     raise security_Error("Error in security.encrypt(): Invalid output type")
 
 

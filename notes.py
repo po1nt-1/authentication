@@ -90,23 +90,31 @@ def _decrypt_text(login: str, master_key: bytes, ct: bytes) -> str:
     return result
 
 
-def _visual(path: str) -> None:
-    if not isinstance(path, str):
+def _visual(path: str, flag: str = "") -> None:
+    if not isinstance(path, str) or not isinstance(flag, str):
         raise notes_Error("Error in notes._visual(): Invalid input type")
-    path_ = path + "_temp"
+
     if os.name == "posix":
-        soft = ["kate", "vim", "geany", "gedit", "nano"]
-        for elem in soft:
-            try:
-                m = subprocess.run([elem, path_])   # type: ignore
-                return None
-            except FileNotFoundError:
-                continue
+        path_temp = path + '_temp'
     elif os.name == "nt":
-        k = subprocess.run(["notepad", path_])  # type: ignore
-        return None
-    raise notes_Error(
-        "Error in notes._visual(): Operating system not supported")
+        path_temp = path[:-4] + '_temp' + ".txt"
+    else:
+        raise notes_Error(
+            "Error in notes._visual(): Operating system not supported")
+
+    soft = ['gedit', 'kate', 'mousepad', 'geany',  'vim', 'nano']
+    for elem in soft:
+        try:
+            m = subprocess.run([elem, path_temp])   # type: ignore
+            return None
+        except FileNotFoundError:
+            continue
+    if flag == "write":
+        with open(path_temp, 'w', encoding="utf-8") as bug_fix:
+            pass
+
+    k = subprocess.run(['notepad', path_temp])  # type: ignore
+    return None
 
 
 def write(login: str, master_key: bytes, name: str) -> None:
@@ -114,21 +122,32 @@ def write(login: str, master_key: bytes, name: str) -> None:
             or not isinstance(master_key, bytes):
         raise notes_Error("Error in notes.write(): Invalid input type")
 
-    path_ = os.path.join("notes", login, name)
+    if os.name == "posix":
+        path_ = os.path.join('authentication', 'notes', login, name)
+        path_temp = path_ + "_temp"
+    elif os.name == "nt":
+        path_ = os.path.join('authentication', 'notes', login, name + ".txt")
+        path_temp = path_[:-4]
+        path_temp += '_temp' + ".txt"
+    else:
+        raise notes_Error(
+            "Error in notes.write(): Operating system not supported")
+
     if os.path.exists(path_):
         os.remove(path_)
 
     try:
-        _visual(path_)
+        _visual(path_, "write")
     except notes_Error as e:
         raise notes_Error(str(e))
-    if not os.path.exists(path_ + "_temp"):
+
+    if not os.path.exists(path_temp):
         raise notes_Error(
             "Error in notes.write(): Invalid work of the text editor")
 
-    with open(path_ + "_temp", "r", encoding="utf-8") as t:
+    with open(path_temp, 'r', encoding="utf-8") as t:
         text: str = t.read()
-    os.remove(path_ + "_temp")
+    os.remove(path_temp)
 
     try:
         checker2 = _encrypt_text(login, master_key, text)
@@ -146,7 +165,17 @@ def edit(login: str, master_key: bytes, name: str) -> None:
             or not isinstance(master_key, bytes):
         raise notes_Error("Error in notes.edit(): Invalid input type")
 
-    path_ = os.path.join("notes", login, name)
+    if os.name == "posix":
+        path_ = os.path.join('authentication', 'notes', login, name)
+        path_temp = path_ + "_temp"
+    elif os.name == "nt":
+        path_ = os.path.join('authentication', 'notes', login, name + ".txt")
+        path_temp = path_[:-4]
+        path_temp += '_temp' + ".txt"
+    else:
+        raise notes_Error(
+            "Error in notes.edit(): Operating system not supported")
+
     if not os.path.exists(path_):
         raise notes_Error("Error in notes.edit(): Note does not exist")
 
@@ -165,7 +194,7 @@ def edit(login: str, master_key: bytes, name: str) -> None:
         raise notes_Error(str(e))
     text: str = str(checker1)
 
-    with open(path_ + "_temp", 'w', encoding="utf-8") as t:
+    with open(path_temp, "w", encoding="utf-8") as t:
         t.write(text)
 
     try:
@@ -173,10 +202,10 @@ def edit(login: str, master_key: bytes, name: str) -> None:
     except notes_Error as e:
         raise notes_Error(str(e))
 
-    with open(path_ + "_temp", 'r', encoding="utf-8") as t:
+    with open(path_temp, "r", encoding="utf-8") as t:
         new_text: str = t.read()
 
-    os.remove(path_ + "_temp")
+    os.remove(path_temp)
 
     try:
         checker3 = _encrypt_text(login, master_key, new_text)
@@ -193,8 +222,24 @@ def note_list(login: str) -> Tuple[str, ...]:
     if not isinstance(login, str):
         raise notes_Error("Error in notes.note_list(): Invalid input type")
 
-    path_ = os.path.join("notes", login)
-    notes = tuple(os.listdir(path_))
+    if os.name == "posix" or os.name == "nt":
+        path_ = os.path.join('authentication', 'notes', login)
+    else:
+        raise notes_Error(
+            "Error in notes.note_list(): Operating system not supported")
+
+    if os.name == "posix":
+        notes: Tuple[str, ...] = tuple(os.listdir(path_))
+    elif os.name == "nt":
+        iter_notes = os.listdir(path_)
+        notes_nt: List[str] = list()
+        for note in iter_notes:
+            notes_nt.append(note[:-4])
+        notes = tuple(notes_nt)
+    else:
+        raise notes_Error(
+            "Error in notes.note_list(): Operating system not supported")
+
     return notes
 
 
@@ -202,7 +247,14 @@ def delete(login: str, name: str) -> None:
     if not isinstance(login, str) or not isinstance(name, str):
         raise notes_Error("Error in notes.delete(): Invalid input type")
 
-    path_ = os.path.join("notes", login, name)
+    if os.name == "posix":
+        path_ = os.path.join('authentication', 'notes', login, name)
+    elif os.name == "nt":
+        path_ = os.path.join('authentication', 'notes', login, name + ".txt")
+    else:
+        raise notes_Error(
+            "Error in notes.delete(): Operating system not supported")
+
     if os.path.exists(path_):
         os.remove(path_)
         return None
@@ -214,11 +266,21 @@ def delete_all(login: str) -> None:
     if not isinstance(login, str):
         raise notes_Error("Error in notes.delete_all(): Invalid input type")
 
-    path_ = os.path.join("notes", login)
+    if os.name == "posix" or os.name == "nt":
+        path_ = os.path.join('authentication', 'notes', login)
+    else:
+        raise notes_Error(
+            "Error in notes.delete_all(): Operating system not supported")
+
     notes = tuple(os.listdir(path_))
 
     for note in notes:
-        path_ = os.path.join("notes", login, note)
+        if os.name == "posix" or os.name == "nt":
+            path_ = os.path.join('authentication', 'notes', login, note)
+        else:
+            raise notes_Error(
+                "Error in notes.delete_all(): Operating system not supported")
+
         if os.path.exists(path_):
             os.remove(path_)
         else:
