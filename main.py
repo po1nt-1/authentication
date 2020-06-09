@@ -422,7 +422,8 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker2: Union[str, int] = _note_name()
                 if checker2 == -1:
                     continue
-                note_name2: str = checker2
+                note_name2: str = str(checker2)
+
                 try:
                     notes.write(login, master_key, note_name2)
                     print("Note created")
@@ -433,7 +434,7 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker3: Union[str, int] = _note_name()
                 if checker3 == -1:
                     continue
-                note_name3: str = checker3
+                note_name3: str = str(checker3)
                 try:
                     notes.edit(login, master_key, note_name3)
                     print("Note saved")
@@ -444,7 +445,7 @@ def actions_with_notes(login: str, master_key: bytes) -> int:
                 checker4: Union[str, int] = _note_name()
                 if checker4 == -1:
                     continue
-                note_name4: str = checker4
+                note_name4: str = str(checker4)
                 if _confirm('deletion'):
                     try:
                         notes.delete(login, note_name4)
